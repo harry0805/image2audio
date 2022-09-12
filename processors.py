@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageOps
 from sklearn.preprocessing import MinMaxScaler
+import cv2
 import os
 
 try:
@@ -86,10 +87,15 @@ class AudioProcessor:
 class ImageProcessor:
     def __init__(self):
         self.image = None
+        self.edge_detected_image = None
 
     @property
     def image_array(self):
         return np.array(self.image)
+
+    @property
+    def edge_image_array(self):
+        return np.array(self.edge_image)
 
     def load_image(self, path, mode='L'):
         self.image = Image.open(path)
@@ -115,9 +121,42 @@ class ImageProcessor:
     def inverse_color(self):
         self.image = ImageOps.invert(self.image)
 
-    def image_to_array(self):
-        self.image_array = np.array(self.image)
-        return self.image_array
+    def edge_detection(self):
+        class CropLayer(object):
+            def __init__(self, params, blobs):
+                self.xstart = 0
+                self.xend = 0
+                self.ystart = 0
+                self.yend = 0
+
+            # Our layer receives two inputs. We need to crop the first input blob
+            # to match a shape of the second one (keeping batch size and number of channels)
+            def getMemoryShapes(self, inputs):
+                inputShape, targetShape = inputs[0], inputs[1]
+                batchSize, numChannels = inputShape[0], inputShape[1]
+                height, width = targetShape[2], targetShape[3]
+
+                self.ystart = (inputShape[2] - targetShape[2]) // 2
+                self.xstart = (inputShape[3] - targetShape[3]) // 2
+                self.yend = self.ystart + height
+                self.xend = self.xstart + width
+
+                return [[batchSize, numChannels, height, width]]
+
+            def forward(self, inputs):
+                return [inputs[0][:, :, self.ystart:self.yend, self.xstart:self.xend]]
+
+        cv2.dnn_registerLayer('Crop', CropLayer)
+        net = cv2.dnn.readNet('edge_detection_model/deploy.prototxt',
+                              'edge_detection_model/hed_pretrained_bsds.caffemodel')
+        inp = cv2.dnn.blobFromImage(self.image_array, scalefactor=1.0, mean=(104.00698793, 116.66876762, 122.67891434),
+                                    swapRB=False, crop=False)
+        net.setInput(inp)
+        out = net.forward()
+        out = out[0, 0]
+        out *= 255
+        out = out.astype(np.uint8)
+        self.edge_detected_image = Image.fromarray(out)
 
     def display_image(self, path=''):
         display(self.image)
