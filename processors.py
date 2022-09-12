@@ -87,7 +87,7 @@ class AudioProcessor:
 class ImageProcessor:
     def __init__(self):
         self.image = None
-        self.edge_detected_image = None
+        self.edge_image = None
 
     @property
     def image_array(self):
@@ -99,7 +99,7 @@ class ImageProcessor:
 
     def load_image(self, path, mode='L'):
         self.image = Image.open(path)
-        if mode:
+        if mode is None:
             self.image.convert(mode)
 
     def resize(self, max_length=1000):
@@ -149,6 +149,8 @@ class ImageProcessor:
         cv2.dnn_registerLayer('Crop', CropLayer)
         net = cv2.dnn.readNet('edge_detection_model/deploy.prototxt',
                               'edge_detection_model/hed_pretrained_bsds.caffemodel')
+        print(self.image_array.shape)
+        pass
         inp = cv2.dnn.blobFromImage(self.image_array, scalefactor=1.0, mean=(104.00698793, 116.66876762, 122.67891434),
                                     swapRB=False, crop=False)
         net.setInput(inp)
@@ -156,7 +158,7 @@ class ImageProcessor:
         out = out[0, 0]
         out *= 255
         out = out.astype(np.uint8)
-        self.edge_detected_image = Image.fromarray(out)
+        self.edge_image = Image.fromarray(out)
 
     def display_image(self, path=''):
         display(self.image)
