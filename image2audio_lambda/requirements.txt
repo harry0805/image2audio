@@ -4,3 +4,4 @@ matplotlib
 pillow
 sklearn
 boto3
+opencv-python

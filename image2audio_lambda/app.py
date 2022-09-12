@@ -7,24 +7,26 @@ import boto3
 import json
 
 
-def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, display_image=False, volume=1,
-                   plot_spectrogram=False):
+def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, volume=1, edge_detection=False, display_image=False, plot_spectrogram=False):
     # Image processing
     ip = ImageProcessor()
-    ip.load_image(image_path)
+    ip.load_image(image_path, mode='RGB')
     ip.resize(600)
     if inverse_color:
         ip.inverse_color()
+    if edge_detection:
+        ip.edge_detection()
     if rotate:
         ip.rotate(rotate)
     ip.add_top_padding(padding)
-    ip.flip()
+    ip.convert_type('L')
     if display_image:
         ip.display_image()
+    ip.flip()
 
     # Transform to Audio
     ap = AudioProcessor(44100)
-    ap.load_image_form_array(ip.image_to_array())
+    ap.load_image_form_array(ip.image_array)
     ap.image_to_spectrogram(inverse_transform=False)
     if plot_spectrogram:
         ap.plot_spectrogram()
@@ -40,25 +42,33 @@ def lambda_handler(event, context):
     image_path = '/tmp/image.png'
     audio_path = '/tmp/audio.wav'
     input_params: dict = json.loads(event['body'])
-    print('Accepted input params:', input_params)
+    print('Accepted input params:')
+    print(input_params)
 
+    # Receive the base64 string and convert to image
     if 'image' in input_params:
         b64_image = input_params.get('image')
         with open(image_path, 'wb') as file:
             file.write(base64.b64decode(b64_image))
-
-        inverse_color = int(input_params.get('inverse', '0'))
         print('Using Input Image')
+    # If no image provided use the default image
     else:
         image_path = 'default.png'
         inverse_color = True
         print('Using Default Image')
+    
+    # Detect other input params
+    inverse_color = input_params.get('inverse', '0')
+    inverse_color = bool(int(inverse_color)) if inverse_color.isdigit() else None
+    print(f'Inverse Color: {inverse_color}')
+    edge_detection = input_params.get('edge', '0')
+    edge_detection = bool(int(edge_detection)) if edge_detection.isdigit() else None
+    print(f'Inverse Color: {edge_detection}')
+    
+    # Run the conversion function with the received params
+    image_to_audio(image_path, audio_path, inverse_color=inverse_color, edge_detection=edge_detection)
 
-
-
-
-    image_to_audio(image_path, audio_path, inverse_color=inverse_color)
-
+    # Save the converted audio to S3 bucket and creating a temporary link to the file
     s3bucket = 'image2audio'
     filepath = 'audio/1.wav'
     s3_resource = boto3.resource('s3')
