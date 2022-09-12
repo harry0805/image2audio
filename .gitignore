@@ -4,6 +4,7 @@
 
 # VSCode Files
 .vscode/
+.idea/
 
 # ini Files
 *.ini
