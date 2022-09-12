@@ -1,34 +1,3 @@
-// function load(){
-//     uploadButton = document.getElementById('uploadButton')
-//     uploadButton.type = 'file';
-//     uploadButton.id = 'uploadButton';
-//     uploadButton.onchange = function() {
-//     var file = this.files[0];
-//     var reader = new FileReader();
-//     reader.onload = function(e) {
-//         base64 = e.target.result;
-//         var copyButton = document.createElement('button');
-//         copyButton.innerHTML = 'Copy';
-//         copyButton.onclick = function() {
-//         var textArea = document.createElement('textarea');
-//         textArea.value = base64;
-//         document.body.appendChild(textArea);
-//         textArea.select();
-//         document.execCommand('copy');
-//         document.body.removeChild(textArea);
-//         };
-//         document.body.appendChild(copyButton);
-//     };
-//     reader.readAsDataURL(file);
-//     };
-//     document.body.appendChild(uploadButton);
-// }
-
-// button = document.getElementById('button')
-// function log(){
-//     console.log(base64)
-// }
-
 function htmlGet(url) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open('GET', url, false);
@@ -54,8 +23,6 @@ function upload() {
             url: "https://qocbvltca4.execute-api.us-east-1.amazonaws.com/Prod/image2audio",
             type: "post",
             crossDomain: true,
-            // dataType: 'json',
-            // contentType: "application/json",
             data: JSON.stringify({image: base64})
         });
     
@@ -84,16 +51,3 @@ function upload() {
     }
     reader.readAsDataURL(file);
 }
-
-
-// submitButton.onclick = function() {
-//   var file = document.getElementById('fileInput').files[0];
-//   var reader = new FileReader();
-//   reader.onload = function(e) {
-//     var dataURL = reader.result;
-//     var output = document.getElementById('result');
-//     output.innerHTML = dataURL;
-//   };
-//   reader.readAsDataURL(file);
-// };
-//
