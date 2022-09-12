@@ -7,8 +7,7 @@ import boto3
 import json
 
 
-def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, display_image=False, volume=1,
-                   plot_spectrogram=False):
+def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, display_image=False, volume=1, plot_spectrogram=False):
     # Image processing
     ip = ImageProcessor()
     ip.load_image(image_path)
@@ -53,7 +52,6 @@ def lambda_handler(event, context):
         image_path = 'default.png'
         inverse_color = True
         print('Using Default Image')
-
 
 
 
