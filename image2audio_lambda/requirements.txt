@@ -1,0 +1,6 @@
+librosa
+soundfile
+matplotlib
+pillow
+sklearn
+boto3

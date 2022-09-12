@@ -1,3 +1,13 @@
+# Google Drive tmp files
+.tmp.dirvedownload/
+.tmp.driveupload/
+
+# VSCode Files
+.vscode/
+
+# ini Files
+*.ini
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
