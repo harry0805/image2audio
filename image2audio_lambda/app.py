@@ -1,4 +1,4 @@
-# print('start import')
+print('start import')
 import os
 os.environ['NUMBA_CACHE_DIR'] = '/tmp/cache'
 from processors import AudioProcessor, ImageProcessor
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     print(event)
     image_path = '/tmp/image.png'
     audio_path = '/tmp/audio.wav'
-    input_params: dict = json.loads(event['body'])
+    input_params: dict = json.loads(event.get('body', '{}'))
     print('Accepted input params:')
     print(input_params)
 

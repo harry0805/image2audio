@@ -20,10 +20,29 @@ function upload() {
         // });
 
         request = $.ajax({
-            url: "https://qocbvltca4.execute-api.us-east-1.amazonaws.com/Prod/image2audio",
-            type: "post",
-            crossDomain: true,
-            data: JSON.stringify({image: base64})
+            url: 'https://qocbvltca4.execute-api.us-east-1.amazonaws.com/Prod/image2audio',
+            type: 'POST',
+            // crossDomain: true,
+            // dataType: 'json',
+            // contentType: 'application/json',
+            // headers: {
+            //     "Access-Control-Allow-Origin": "*",
+            //     "Access-Control-Allow-Methods": "DELETE, POST, GET, OPTIONS",
+            //     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
+
+            // },
+            body: JSON.stringify(base64),
+            success: function (response) {
+                if (response != 0) {
+                    console.log(response);
+                } else {
+                    alert('file not uploaded');
+                }
+            },
+
+            error: function (e) {
+                console.log(e);
+            },
         });
     
         // Callback handler that will be called on success
