@@ -7,34 +7,28 @@ function htmlGet(url) {
 
 function upload() {
     file = document.getElementById('fileInput').files[0];
+    inverse = document.getElementById('inverse').checked
+    edge = document.getElementById('edge').checked
+
+    if (file == undefined){
+        $('#messageBox').text('Please select a file!');
+        return
+    }
+
     var reader = new FileReader();
     var base64;
     reader.onload = () => {
         base64 = reader.result.replace(/^.+;base64,/, '');
         console.log(base64)
-        // var xml = XMLHttpRequest()
-        // $.post('https://qocbvltca4.execute-api.us-east-1.amazonaws.com/Prod/image2audio',
-        //     {image: 'abcdefg HELLO'},
-        // function(returnedData) {
-        //     console.log(returnedData);
-        // });
-
         request = $.ajax({
             url: 'https://qocbvltca4.execute-api.us-east-1.amazonaws.com/Prod/image2audio',
             type: 'POST',
-            // crossDomain: true,
-            // dataType: 'json',
+            crossDomain: true,
+            dataType: 'json',
             // contentType: 'application/json',
-            // headers: {
-            //     "Access-Control-Allow-Origin": "*",
-            //     "Access-Control-Allow-Methods": "DELETE, POST, GET, OPTIONS",
-            //     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
-
-            // },
-            body: JSON.stringify(base64),
+            data: JSON.stringify({'image': base64, 'inverse': +inverse,'edge': +edge}),
             success: function (response) {
                 if (response != 0) {
-                    console.log(response);
                 } else {
                     alert('file not uploaded');
                 }
@@ -48,8 +42,14 @@ function upload() {
         // Callback handler that will be called on success
         request.done(function (response, textStatus, jqXHR){
             // Log a message to the console
-            console.log("Hooray, it worked!");
             console.log(response)
+            if ($('#audioPlayer').length){
+                $('#audioPlayer').attr('src', response)
+            }
+            else {
+                $('#audioContainer').append('<audio controls src=\"'+ response +'\"></audio>')
+            }
+            
         });
     
         // Callback handler that will be called on failure
@@ -60,13 +60,10 @@ function upload() {
                 textStatus, errorThrown
             );
         });
-    
-        // Callback handler that will be called regardless
-        // if the request failed or succeeded
-        request.always(function () {
-            // Reenable the inputs
-            $inputs.prop("disabled", false);
-        });
     }
     reader.readAsDataURL(file);
+}
+
+function runtest(){
+    console.log($('html').length)
 }

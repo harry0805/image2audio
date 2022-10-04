@@ -131,9 +131,8 @@ class ImageProcessor:
 
     def resize(self, max_length=1000):
         image_size = self.image.size
-        if image_size[0] > max_length or image_size[1] > max_length:
-            ratio = max_length / max(image_size)
-            self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
+        ratio = max_length / max(image_size)
+        self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
     
     def convert_type(self, mode):
         self.image = self.image.convert(mode)
