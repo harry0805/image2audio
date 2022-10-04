@@ -1,4 +1,4 @@
-# print('start import')
+print('start import')
 import os
 os.environ['NUMBA_CACHE_DIR'] = '/tmp/cache'
 from processors import AudioProcessor, ImageProcessor
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     print(event)
     image_path = '/tmp/image.png'
     audio_path = '/tmp/audio.wav'
-    input_params: dict = json.loads(event['body'])
+    input_params: dict = json.loads(event.get('body', '{}'))
     print('Accepted input params:')
     print(input_params)
 
@@ -58,12 +58,10 @@ def lambda_handler(event, context):
         print('Using Default Image')
     
     # Detect other input params
-    inverse_color = input_params.get('inverse', '0')
-    inverse_color = bool(int(inverse_color)) if inverse_color.isdigit() else None
+    inverse_color = bool(input_params.get('inverse', False))
     print(f'Inverse Color: {inverse_color}')
-    edge_detection = input_params.get('edge', '0')
-    edge_detection = bool(int(edge_detection)) if edge_detection.isdigit() else None
-    print(f'Inverse Color: {edge_detection}')
+    edge_detection = bool(input_params.get('edge', False))
+    print(f'Edge Detection: {edge_detection}')
     
     # Run the conversion function with the received params
     image_to_audio(image_path, audio_path, inverse_color=inverse_color, edge_detection=edge_detection)
@@ -77,7 +75,7 @@ def lambda_handler(event, context):
         s3_resource.meta.client.upload_file(audio_path, s3bucket, filepath)
         download_url = s3_client.generate_presigned_url('get_object', Params={'Bucket': s3bucket, 'Key': filepath}, ExpiresIn=3600)
         return {
-            'statusCode': 200, 
+            'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Allow-Origin': '*',
@@ -94,4 +92,3 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
             },
             'body': json.dumps(e)}
-

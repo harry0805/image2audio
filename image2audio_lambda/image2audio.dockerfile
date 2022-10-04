@@ -8,6 +8,7 @@ COPY requirements.txt .
 RUN  pip3 install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 # Copy function code and its required files
+COPY edge_detection_model ${LAMBDA_TASK_ROOT}/edge_detection_model
 COPY default.png ${LAMBDA_TASK_ROOT}
 COPY processors.py ${LAMBDA_TASK_ROOT}
 COPY app.py ${LAMBDA_TASK_ROOT}
