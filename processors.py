@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from sklearn.preprocessing import MinMaxScaler
 import cv2
-import os
+
 
 try:
     from IPython.display import Audio, display
@@ -108,6 +108,7 @@ class CropLayer(object):
     def forward(self, inputs):
         return [inputs[0][:, :, self.ystart:self.yend, self.xstart:self.xend]]
 
+
 class ImageProcessor:
     def __init__(self):
         self.image = None
@@ -124,9 +125,8 @@ class ImageProcessor:
 
     def resize(self, max_length=1000):
         image_size = self.image.size
-        if image_size[0] > max_length or image_size[1] > max_length:
-            ratio = max_length / max(image_size)
-            self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
+        ratio = max_length / max(image_size)
+        self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
     
     def convert_type(self, mode):
         self.image = self.image.convert(mode)
