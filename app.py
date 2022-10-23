@@ -1,46 +1,30 @@
-print('start import')
+print('Starting import...')
 import os
 os.environ['NUMBA_CACHE_DIR'] = '/tmp/cache'
-from processors import AudioProcessor, ImageProcessor
+from processors import image_to_audio
 import base64
 import boto3
 import json
+from datetime import datetime
+
+# Load S3
+print('Loading S3...')
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3', region_name="us-east-1", config=boto3.session.Config(signature_version='s3v4'))
 
 
-def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, volume=1, edge_detection=False, display_image=False, plot_spectrogram=False):
-    # Image processing
-    ip = ImageProcessor()
-    ip.load_image(image_path, mode='RGB')
-    ip.resize(600)
-    if inverse_color:
-        ip.inverse_color()
-    if edge_detection:
-        ip.edge_detection()
-    if rotate:
-        ip.rotate(rotate)
-    ip.add_top_padding(padding)
-    ip.convert_type('L')
-    if display_image:
-        ip.display_image()
-    ip.flip()
-
-    # Transform to Audio
-    ap = AudioProcessor(44100)
-    ap.load_image_form_array(ip.image_array)
-    ap.image_to_spectrogram(inverse_transform=False)
-    if plot_spectrogram:
-        ap.plot_spectrogram()
-    ap.spectrogram_to_wave()
-    ap.normalize_audio()
-    ap.change_volume(volume)
-    ap.play_sound(save_path)
+def save_to_s3(path, path_in_s3, s3bucket='image2audio', presigned_url=True, url_expire_time=3600):
+    s3_resource.meta.client.upload_file(path, s3bucket, path_in_s3)
+    if presigned_url:
+        return s3_client.generate_presigned_url('get_object', Params={'Bucket': s3bucket, 'Key': path_in_s3}, ExpiresIn=url_expire_time)
 
 
 def lambda_handler(event, context):
-    print('lambda is running!')
+    print('Lambda is running!')
     print(event)
-    image_path = '/tmp/image.png'
     audio_path = '/tmp/audio.wav'
+    image_path = '/tmp/image.png'
+    edge_detection_image_path = '/tmp/edge.png'
     input_params: dict = json.loads(event.get('body', '{}'))
     print('Accepted input params:')
     print(input_params)
@@ -50,7 +34,7 @@ def lambda_handler(event, context):
         b64_image = input_params.get('image')
         with open(image_path, 'wb') as file:
             file.write(base64.b64decode(b64_image))
-        print('Using Input Image')
+        print('Using input image')
     # If no image provided use the default image
     else:
         image_path = 'default.png'
@@ -64,31 +48,30 @@ def lambda_handler(event, context):
     print(f'Edge Detection: {edge_detection}')
     
     # Run the conversion function with the received params
-    image_to_audio(image_path, audio_path, inverse_color=inverse_color, edge_detection=edge_detection)
+    print('Converting audio...')
+    image_to_audio(image_path, audio_path, inverse_color=inverse_color, edge_detection=edge_detection,
+                   edge_detection_image_path=edge_detection_image_path)
 
     # Save the converted audio to S3 bucket and creating a temporary link to the file
-    s3bucket = 'image2audio'
-    filepath = 'audio/1.wav'
-    s3_resource = boto3.resource('s3')
-    s3_client = boto3.client('s3', region_name="us-east-1", config=boto3.session.Config(signature_version='s3v4'))
-    try:
-        s3_resource.meta.client.upload_file(audio_path, s3bucket, filepath)
-        download_url = s3_client.generate_presigned_url('get_object', Params={'Bucket': s3bucket, 'Key': filepath}, ExpiresIn=3600)
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-            },
-            'body': json.dumps(download_url)}
-    except Exception as e:
-        print(e)
-        return {
-            'statusCode': 500, 
-            'headers': {
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-            },
-            'body': json.dumps(e)}
+    print('Saving data to S3...')
+    current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+    audio_savepath = f'audio/{current_time}.wav'
+    edge_detection_image_savepath = f'edge_detection/{current_time}.png'
+
+    # Create the response data and return
+    data = {
+        'audio': save_to_s3(audio_path, audio_savepath),
+        'edge_image': save_to_s3(edge_detection_image_path, edge_detection_image_savepath) if edge_detection is True else None
+    }
+    print('Response data:')
+    print(data)
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+        },
+        'body': json.dumps(data)
+    }
