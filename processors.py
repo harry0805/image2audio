@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from sklearn.preprocessing import MinMaxScaler
 import cv2
-import os
+
 
 try:
     from IPython.display import Audio, display
@@ -108,6 +108,7 @@ class CropLayer(object):
     def forward(self, inputs):
         return [inputs[0][:, :, self.ystart:self.yend, self.xstart:self.xend]]
 
+
 class ImageProcessor:
     def __init__(self):
         self.image = None
@@ -122,11 +123,10 @@ class ImageProcessor:
         if mode is not None:
             self.image = self.image.convert(mode)
 
-    def resize(self, max_length=1000):
+    def resize(self, max_length=400):
         image_size = self.image.size
-        if image_size[0] > max_length or image_size[1] > max_length:
-            ratio = max_length / max(image_size)
-            self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
+        ratio = max_length / max(image_size)
+        self.image = self.image.resize((int(image_size[0] * ratio), int(image_size[1] * ratio)))
     
     def convert_type(self, mode):
         self.image = self.image.convert(mode)
@@ -160,3 +160,41 @@ class ImageProcessor:
         display(self.image)
         if path:
             self.image.save(path)
+
+
+def image_to_audio(image_path, save_path=None, rotate=0, padding=3, inverse_color=False, volume=1, edge_detection=False,
+                   edge_detection_image_path='', display_image=False, plot_spectrogram=False):
+    # Image processing
+    ip = ImageProcessor()
+    ip.load_image(image_path, mode='RGB')
+    ip.resize(512)
+    if inverse_color:
+        ip.inverse_color()
+    if edge_detection:
+        ip.resize(128)
+        ip.edge_detection()
+        ip.resize(512)
+        if edge_detection_image_path:
+            ip.image.save(edge_detection_image_path)
+    if rotate:
+        ip.rotate(rotate)
+    ip.add_top_padding(padding)
+    ip.convert_type('L')
+    if display_image:
+        ip.display_image()
+    ip.flip()
+
+    # Transform to Audio
+    ap = AudioProcessor(44100)
+    ap.load_image_form_array(ip.image_array)
+    ap.image_to_spectrogram(inverse_transform=False)
+    if plot_spectrogram:
+        ap.plot_spectrogram()
+    ap.spectrogram_to_wave()
+    ap.normalize_audio()
+    ap.change_volume(volume)
+    ap.play_sound(save_path)
+
+
+if __name__ == '__main__':
+    image_to_audio('image/default.png', 'audio/testaudio.wav', edge_detection=True)

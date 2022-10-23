@@ -1,0 +1,8 @@
+numpy
+soundfile
+boto3
+pillow
+matplotlib
+librosa
+opencv-python-headless
+sklearn
